@@ -125,7 +125,7 @@ class OpenVRTest(object):
     resultMat[1] = s.cameraToProjection[1]
     #LEFT EYE
     s.camera0 = SoFrustumCamera()
-    s.basePosition0 = SbVec3f(s.camToHead[0][0][3], 0.0, 0.5)
+    s.basePosition0 = SbVec3f(s.camToHead[0][0][3], 0.0, 0.0)
     s.camera0.position.setValue(s.basePosition0)
     s.camera0.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
     near = resultMat[0][2][3]/(resultMat[0][2][2]-1)
@@ -146,7 +146,7 @@ class OpenVRTest(object):
     s.camera0.aspectRatio.setValue(aspect)
     #RIGHT EYE
     s.camera1 = SoFrustumCamera()
-    s.basePosition1 = SbVec3f(s.camToHead[1][0][3], 0.0, 0.5)
+    s.basePosition1 = SbVec3f(s.camToHead[1][0][3], 0.0, 0.0)
     s.camera1.position.setValue(s.basePosition1)
     s.camera1.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
     near = resultMat[1][2][3]/(resultMat[1][2][2]-1)
