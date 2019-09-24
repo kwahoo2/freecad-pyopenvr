@@ -9,6 +9,7 @@ from openvr.glframework import shader_string
 from sdl2 import *
 
 from pivy.coin import SoSeparator
+from pivy.coin import SoGroup
 from pivy.coin import SoBaseColor
 from pivy.coin import SbColor
 from pivy.coin import SoSceneManager
@@ -48,7 +49,7 @@ class OpenVRTest(object):
     s.eyes = [openvr.Eye_Left, openvr.Eye_Right] 
     s.cameraToProjection = [None] * 2
     s.camToHead = [None] * 2
-    s.nearZ = 0.2
+    s.nearZ = 0.01
     s.farZ = 500
 
     for eye in range(2):
@@ -91,35 +92,42 @@ class OpenVRTest(object):
     s.m_sceneManager.setBackgroundColor(SbColor(0.0, 0.0, 0.8));
     light = SoDirectionalLight()
     light2 = SoDirectionalLight()
+    light2.direction.setValue(-1,-1,-1)
+    light2.intensity.setValue(0.6)
+    light2.color.setValue(0.8,0.8,1)
     s.scale = SoScale()
     s.scale.scaleFactor.setValue(0.001, 0.001, 0.001) #OpenVR uses meters not milimeters
     s.camtrans0 = SoTranslation()
     s.camtrans1 = SoTranslation()
-    s.sep0 = SoSeparator()
-    s.sep1 = SoSeparator()
+    s.cgrp0 = SoGroup()
+    s.cgrp1 = SoGroup()
+    s.sgrp0 = SoGroup()
+    s.sgrp1 = SoGroup()
     s.camtrans0.translation.setValue([s.camToHead[0][0][3],0,0])
     s.camtrans1.translation.setValue([s.camToHead[1][0][3],0,0])
     sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()#get active scenegraph
     #LEFT EYE
     s.rootScene0 = SoSeparator()
     s.rootScene0.ref()
-    s.rootScene0.addChild(s.camtrans0)#translation have to be earlier than translated object
-    s.rootScene0.addChild(s.camera0)
-    s.rootScene0.addChild(s.sep0)
-    s.rootScene0.addChild(s.scale)
-    s.rootScene0.addChild(light)
-    s.rootScene0.addChild(light2)
-    s.rootScene0.addChild(sg)#add scenegraph
+    s.rootScene0.addChild(s.cgrp0)
+    s.cgrp0.addChild(s.camtrans0)
+    s.cgrp0.addChild(s.camera0)
+    s.rootScene0.addChild(s.sgrp0)
+    s.sgrp0.addChild(light)
+    s.sgrp0.addChild(light2)
+    s.sgrp0.addChild(s.scale)
+    s.sgrp0.addChild(sg)#add scenegraph
     #RIGHT EYE
     s.rootScene1 = SoSeparator()
     s.rootScene1.ref()
-    s.rootScene1.addChild(s.camtrans1)
-    s.rootScene1.addChild(s.camera1)
-    s.rootScene0.addChild(s.sep0)
-    s.rootScene1.addChild(s.scale)
-    s.rootScene1.addChild(light)
-    s.rootScene1.addChild(light2)
-    s.rootScene1.addChild(sg)#add scenegraph
+    s.rootScene1.addChild(s.cgrp1)
+    s.cgrp1.addChild(s.camtrans1)
+    s.cgrp1.addChild(s.camera1)
+    s.rootScene1.addChild(s.sgrp1)
+    s.sgrp1.addChild(light)
+    s.sgrp1.addChild(light2)
+    s.sgrp1.addChild(s.scale)
+    s.sgrp1.addChild(sg)#add scenegraph
 
   def setupcameras(s):
     resultMat = [None] * 2
@@ -201,12 +209,12 @@ class OpenVRTest(object):
       #coin3d rendering
       glUseProgram(0)
       if eye == 0:
-        s.camera0.position.setValue(s.basePosition0 + s.hmdpos)
         s.camera0.orientation.setValue(hmdrot)
+        s.camera0.position.setValue(s.basePosition0 + s.hmdpos)
         s.m_sceneManager.setSceneGraph(s.rootScene0)
       if eye == 1:
-        s.camera1.position.setValue(s.basePosition1 + s.hmdpos)
         s.camera1.orientation.setValue(hmdrot)
+        s.camera1.position.setValue(s.basePosition1 + s.hmdpos)
         s.m_sceneManager.setSceneGraph(s.rootScene1)
       glEnable(GL_CULL_FACE)
       glEnable(GL_DEPTH_TEST)
