@@ -93,28 +93,32 @@ class OpenVRTest(object):
     light2 = SoDirectionalLight()
     s.scale = SoScale()
     s.scale.scaleFactor.setValue(0.001, 0.001, 0.001) #OpenVR uses meters not milimeters
-    s.trans0 = SoTranslation()
-    s.trans1 = SoTranslation()
-    s.trans0.translation.setValue([0,0,0])
-    s.trans1.translation.setValue([0,0,0])
+    s.camtrans0 = SoTranslation()
+    s.camtrans1 = SoTranslation()
+    s.sep0 = SoSeparator()
+    s.sep1 = SoSeparator()
+    s.camtrans0.translation.setValue([s.camToHead[0][0][3],0,0])
+    s.camtrans1.translation.setValue([s.camToHead[1][0][3],0,0])
     sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()#get active scenegraph
     #LEFT EYE
     s.rootScene0 = SoSeparator()
     s.rootScene0.ref()
+    s.rootScene0.addChild(s.camtrans0)#translation have to be earlier than translated object
     s.rootScene0.addChild(s.camera0)
+    s.rootScene0.addChild(s.sep0)
     s.rootScene0.addChild(s.scale)
     s.rootScene0.addChild(light)
     s.rootScene0.addChild(light2)
-    s.rootScene0.addChild(s.trans0)#translation have to be earlier than translated object
     s.rootScene0.addChild(sg)#add scenegraph
     #RIGHT EYE
     s.rootScene1 = SoSeparator()
     s.rootScene1.ref()
+    s.rootScene1.addChild(s.camtrans1)
     s.rootScene1.addChild(s.camera1)
+    s.rootScene0.addChild(s.sep0)
     s.rootScene1.addChild(s.scale)
     s.rootScene1.addChild(light)
     s.rootScene1.addChild(light2)
-    s.rootScene1.addChild(s.trans1)#translation have to be earlier than translated object
     s.rootScene1.addChild(sg)#add scenegraph
 
   def setupcameras(s):
@@ -125,7 +129,7 @@ class OpenVRTest(object):
     resultMat[1] = s.cameraToProjection[1]
     #LEFT EYE
     s.camera0 = SoFrustumCamera()
-    s.basePosition0 = SbVec3f(s.camToHead[0][0][3], 0.0, 0.0)
+    s.basePosition0 = SbVec3f(0.0, 0.0, 0.0)
     s.camera0.position.setValue(s.basePosition0)
     s.camera0.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
     near = resultMat[0][2][3]/(resultMat[0][2][2]-1)
@@ -146,7 +150,7 @@ class OpenVRTest(object):
     s.camera0.aspectRatio.setValue(aspect)
     #RIGHT EYE
     s.camera1 = SoFrustumCamera()
-    s.basePosition1 = SbVec3f(s.camToHead[1][0][3], 0.0, 0.0)
+    s.basePosition1 = SbVec3f(0.0, 0.0, 0.0)
     s.camera1.position.setValue(s.basePosition1)
     s.camera1.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
     near = resultMat[1][2][3]/(resultMat[1][2][2]-1)
@@ -197,12 +201,12 @@ class OpenVRTest(object):
       #coin3d rendering
       glUseProgram(0)
       if eye == 0:
-        s.camera0.orientation.setValue(hmdrot)
         s.camera0.position.setValue(s.basePosition0 + s.hmdpos)
+        s.camera0.orientation.setValue(hmdrot)
         s.m_sceneManager.setSceneGraph(s.rootScene0)
       if eye == 1:
-        s.camera1.orientation.setValue(hmdrot)
         s.camera1.position.setValue(s.basePosition1 + s.hmdpos)
+        s.camera1.orientation.setValue(hmdrot)
         s.m_sceneManager.setSceneGraph(s.rootScene1)
       glEnable(GL_CULL_FACE)
       glEnable(GL_DEPTH_TEST)
