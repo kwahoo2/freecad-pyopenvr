@@ -47,8 +47,8 @@ class OpenVRTest(object):
     s.texture_ids = glGenTextures(2)
     s.textures = [None] * 2
     s.eyes = [openvr.Eye_Left, openvr.Eye_Right] 
-    s.cameraToProjection = [None] * 2
     s.camToHead = [None] * 2
+    s.proj_raw = [None] * 2
     s.nearZ = 0.01
     s.farZ = 500
 
@@ -73,8 +73,7 @@ class OpenVRTest(object):
       texture.eType = openvr.TextureType_OpenGL
       texture.eColorSpace = openvr.ColorSpace_Gamma
       s.textures[eye] = texture
-      proj = s.vr_system.getProjectionMatrix(s.eyes[eye], s.nearZ, s.farZ)
-      s.cameraToProjection[eye] = numpy.array([ [proj.m[j][i] for i in range(4)] for j in range(4) ])
+      s.proj_raw[eye]= s.vr_system.getProjectionRaw(s.eyes[eye]) #void GetProjectionRaw( Hmd_Eye eEye, float *pfLeft, float *pfRight, float *pfTop, float *pfBottom )
       eyehead = s.vr_system.getEyeToHeadTransform(s.eyes[eye]) #[0][3] is eye-center distance
       s.camToHead[eye] = numpy.array([ [eyehead.m[j][i] for i in range(4)] for j in range(3) ]) 
 
@@ -130,27 +129,20 @@ class OpenVRTest(object):
     s.sgrp1.addChild(sg)#add scenegraph
 
   def setupcameras(s):
-    resultMat = [None] * 2
-    #resultMat[0] = numpy.dot(s.camToHead[0], s.cameraToProjection[0])
-    #resultMat[1] = numpy.dot(s.camToHead[1], s.cameraToProjection[1])
-    resultMat[0] = s.cameraToProjection[0]
-    resultMat[1] = s.cameraToProjection[1]
+    nearZ = s.nearZ
+    farZ = s.farZ
     #LEFT EYE
     s.camera0 = SoFrustumCamera()
     s.basePosition0 = SbVec3f(0.0, 0.0, 0.0)
     s.camera0.position.setValue(s.basePosition0)
     s.camera0.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
-    near = resultMat[0][2][3]/(resultMat[0][2][2]-1)
-    far = resultMat[0][2][3]/(resultMat[0][2][2]+1)
-    left = near * (resultMat[0][0][2]-1)/resultMat[0][0][0]
-    right = near * (resultMat[0][0][2]+1)/resultMat[0][0][0]
-    top = near * (resultMat[0][1][2]+1)/resultMat[0][1][1]
-    bottom = near * (resultMat[0][1][2]-1)/resultMat[0][1][1]
-    aspect = resultMat[0][1][1]/resultMat[0][0][0]
-    focallen = resultMat[0][0][0]
-    s.camera0.focalDistance.setValue(focallen)
-    s.camera0.nearDistance.setValue(near)
-    s.camera0.farDistance.setValue(far)
+    left = nearZ * s.proj_raw[0][0]
+    right = nearZ * s.proj_raw[0][1]
+    top = nearZ * (-s.proj_raw[0][2]) #why top is negative?
+    bottom = nearZ * (-s.proj_raw[0][3])
+    aspect = (2 * nearZ / (top - bottom)) / (2 * nearZ * (right - left))
+    s.camera0.nearDistance.setValue(nearZ)
+    s.camera0.farDistance.setValue(farZ)
     s.camera0.left.setValue(left)
     s.camera0.right.setValue(right)
     s.camera0.top.setValue(top)
@@ -161,17 +153,13 @@ class OpenVRTest(object):
     s.basePosition1 = SbVec3f(0.0, 0.0, 0.0)
     s.camera1.position.setValue(s.basePosition1)
     s.camera1.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
-    near = resultMat[1][2][3]/(resultMat[1][2][2]-1)
-    far = resultMat[1][2][3]/(resultMat[1][2][2]+1)
-    left = near * (resultMat[1][0][2]-1)/resultMat[1][0][0]
-    right = near * (resultMat[1][0][2]+1)/resultMat[1][0][0]
-    top = near * (resultMat[1][1][2]+1)/resultMat[1][1][1]
-    bottom = near * (resultMat[1][1][2]-1)/resultMat[1][1][1]
-    aspect = resultMat[1][1][1]/resultMat[1][0][0]
-    focallen = resultMat[1][0][0]
-    s.camera1.focalDistance.setValue(focallen)
-    s.camera1.nearDistance.setValue(near)
-    s.camera1.farDistance.setValue(far)
+    left = nearZ * s.proj_raw[1][0]
+    right = nearZ * s.proj_raw[1][1]
+    top = nearZ * (-s.proj_raw[1][2])
+    bottom = nearZ * (-s.proj_raw[1][3])
+    aspect = (2 * nearZ / (top - bottom)) / (2 * nearZ * (right - left))
+    s.camera1.nearDistance.setValue(nearZ)
+    s.camera1.farDistance.setValue(farZ)
     s.camera1.left.setValue(left)
     s.camera1.right.setValue(right)
     s.camera1.top.setValue(top)
