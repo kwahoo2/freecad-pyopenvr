@@ -138,8 +138,8 @@ class OpenVRTest(object):
     s.camera0.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
     left = nearZ * s.proj_raw[0][0]
     right = nearZ * s.proj_raw[0][1]
-    top = nearZ * (-s.proj_raw[0][2]) #why top is negative?
-    bottom = nearZ * (-s.proj_raw[0][3])
+    top = nearZ * s.proj_raw[0][3] #top and bottom are reversed https://github.com/ValveSoftware/openvr/issues/110
+    bottom = nearZ * s.proj_raw[0][2]
     aspect = (2 * nearZ / (top - bottom)) / (2 * nearZ * (right - left))
     s.camera0.nearDistance.setValue(nearZ)
     s.camera0.farDistance.setValue(farZ)
@@ -155,8 +155,8 @@ class OpenVRTest(object):
     s.camera1.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
     left = nearZ * s.proj_raw[1][0]
     right = nearZ * s.proj_raw[1][1]
-    top = nearZ * (-s.proj_raw[1][2])
-    bottom = nearZ * (-s.proj_raw[1][3])
+    top = nearZ * s.proj_raw[1][3]
+    bottom = nearZ * s.proj_raw[1][2]
     aspect = (2 * nearZ / (top - bottom)) / (2 * nearZ * (right - left))
     s.camera1.nearDistance.setValue(nearZ)
     s.camera1.farDistance.setValue(farZ)
@@ -191,18 +191,18 @@ class OpenVRTest(object):
     s.extractrotation()
     hmdrot = SbRotation(s.qx, s.qy, s.qz, s.qw)
     s.extracttranslation()
+    s.camera0.orientation.setValue(hmdrot)
+    s.camera0.position.setValue(s.basePosition0 + s.hmdpos)
+    s.camera1.orientation.setValue(hmdrot)
+    s.camera1.position.setValue(s.basePosition1 + s.hmdpos)
 
     for eye in range(2):
       glBindFramebuffer(GL_FRAMEBUFFER, s.frame_buffers[eye])
       #coin3d rendering
       glUseProgram(0)
       if eye == 0:
-        s.camera0.orientation.setValue(hmdrot)
-        s.camera0.position.setValue(s.basePosition0 + s.hmdpos)
         s.m_sceneManager.setSceneGraph(s.rootScene0)
       if eye == 1:
-        s.camera1.orientation.setValue(hmdrot)
-        s.camera1.position.setValue(s.basePosition1 + s.hmdpos)
         s.m_sceneManager.setSceneGraph(s.rootScene1)
       glEnable(GL_CULL_FACE)
       glEnable(GL_DEPTH_TEST)
