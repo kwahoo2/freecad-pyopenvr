@@ -19,18 +19,25 @@ source: https://forum.freecadweb.org/viewtopic.php?p=336241#p336241
 ### Software Dependencies
 
 * FreeCAD v0.19.xxxxx
+* Python 3.5+
+* SteamVR Runtime (distributed with Valve Steam)
 
 #### Python libraries
 * numpy
 * pivy.coin
 * openvr
-* 
+* sdl2
 
 ### Hardware
 
+* Any HMD supported by OpenVR (HTC Vive, Valve Index, Oculus Rift)
+
 ## Installation
 
-`pip` etc...
+* Install Python libraries
+* Start SteamVR
+* Start FreeCAD
+* Paste `freecad-pyopenvr.py` content in the FreeCAD Python console
 
 ## Contribute
 
@@ -41,3 +48,5 @@ PR's are welcome!FreeCAD
 Feedback, thoughts, questions, please direct them to the [dedicated FreeCAD forum discussion thread](https://forum.freecadweb.org/viewtopic.php?p=336241#p336241). 
 
 ## License
+
+Check `LICENSE` for details
