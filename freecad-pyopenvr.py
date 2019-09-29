@@ -11,7 +11,9 @@ from pivy.coin import SoSeparator
 from pivy.coin import SoGroup
 from pivy.coin import SoBaseColor
 from pivy.coin import SbColor
+from pivy.coin import SbColor4f
 from pivy.coin import SoSceneManager
+#from pivy.coin import SoGLRenderAction
 from pivy.coin import SbViewportRegion
 from pivy.coin import SoFrustumCamera
 from pivy.coin import SbVec3f
@@ -35,9 +37,9 @@ class OpenVRTest(object):
   def setupscene(self):
     #coin3d setup
     vpRegion = SbViewportRegion(self.w, self.h)
-    self.m_sceneManager = SoSceneManager()
+    self.m_sceneManager = SoSceneManager() #scene manager overhead over render manager seems to be pretty #small
     self.m_sceneManager.setViewportRegion(vpRegion)
-    self.m_sceneManager.setBackgroundColor(SbColor(0.0, 0.0, 0.8));
+    self.m_sceneManager.setBackgroundColor(SbColor(0.0, 0.0, 0.8))
     light = SoDirectionalLight()
     light2 = SoDirectionalLight()
     light2.direction.setValue(-1,-1,-1)
@@ -89,7 +91,7 @@ class OpenVRTest(object):
     right = nearZ * self.proj_raw[0][1]
     top = nearZ * self.proj_raw[0][3] #top and bottom are reversed https://github.com/ValveSoftware/openvr/issues/110
     bottom = nearZ * self.proj_raw[0][2]
-    aspect = (2 * nearZ / (top - bottom)) / (2 * nearZ * (right - left))
+    aspect = (top - bottom) / (right - left)
     self.camera0.nearDistance.setValue(nearZ)
     self.camera0.farDistance.setValue(farZ)
     self.camera0.left.setValue(left)
@@ -106,7 +108,7 @@ class OpenVRTest(object):
     right = nearZ * self.proj_raw[1][1]
     top = nearZ * self.proj_raw[1][3]
     bottom = nearZ * self.proj_raw[1][2]
-    aspect = (2 * nearZ / (top - bottom)) / (2 * nearZ * (right - left))
+    aspect = (top - bottom) / (right - left)
     self.camera1.nearDistance.setValue(nearZ)
     self.camera1.farDistance.setValue(farZ)
     self.camera1.left.setValue(left)
