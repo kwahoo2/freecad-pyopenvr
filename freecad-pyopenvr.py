@@ -223,6 +223,11 @@ class OpenVRTest(object):
     glDeleteBuffers(1, [self.depth_buffer])
     for eye in range(2):
       glDeleteBuffers(1, [self.frame_buffers[eye]])
+    self.rootScene0.unref()
+    self.rootScene1.unref()
+    SDL_GL_DeleteContext(self.context)
+    SDL_DestroyWindow(self.window)
+    SDL_Quit()
     openvr.shutdown()
 
 if __name__ == "__main__":
