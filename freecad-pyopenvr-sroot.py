@@ -28,6 +28,9 @@ from math import sqrt, copysign
 
 # see https://github.com/cmbruns/pyopenvr
 
+# this is an alternative implementation of freecad-pyopenvr.py, but uses only one rootScene node (freecad-pyopenvr.py uses 2, one per eye)
+# and changes the camara frustum when the active eye is changed (freecad-pyopenvr.py changes whole rootScene)
+
 class OpenVRTest(object):
   "FreeCAD OpenVR testing script"
 
@@ -48,15 +51,9 @@ class OpenVRTest(object):
     self.scale = SoScale()
     self.scale.scaleFactor.setValue(0.001, 0.001, 0.001) #OpenVR uses meters not milimeters
     self.camtrans0 = SoTranslation()
-    self.camtrans1 = SoTranslation()
     self.cgrp0 = SoGroup()
-    self.cgrp1 = SoGroup()
     self.sgrp0 = SoGroup()
-    self.sgrp1 = SoGroup()
-    self.camtrans0.translation.setValue([self.camToHead[0][0][3],0,0])
-    self.camtrans1.translation.setValue([self.camToHead[1][0][3],0,0])
     sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()#get active scenegraph
-    #LEFT EYE
     self.rootScene0 = SoSeparator()
     self.rootScene0.ref()
     self.rootScene0.addChild(self.cgrp0)
@@ -67,56 +64,45 @@ class OpenVRTest(object):
     self.sgrp0.addChild(light2)
     self.sgrp0.addChild(self.scale)
     self.sgrp0.addChild(sg)#add scenegraph
-    #RIGHT EYE
-    self.rootScene1 = SoSeparator()
-    self.rootScene1.ref()
-    self.rootScene1.addChild(self.cgrp1)
-    self.cgrp1.addChild(self.camtrans1)
-    self.cgrp1.addChild(self.camera1)
-    self.rootScene1.addChild(self.sgrp1)
-    self.sgrp1.addChild(light)
-    self.sgrp1.addChild(light2)
-    self.sgrp1.addChild(self.scale)
-    self.sgrp1.addChild(sg)#add scenegraph
+    self.m_sceneManager.setSceneGraph(self.rootScene0)
+
+  def setcamleft(self):
+    self.camera0.left.setValue(self.leftL)
+    self.camera0.right.setValue(self.rightL)
+    self.camera0.top.setValue(self.topL)
+    self.camera0.bottom.setValue(self.bottomL)
+    self.camera0.aspectRatio.setValue(self.aspectL)
+    self.camtrans0.translation.setValue([self.camToHead[0][0][3],0,0])
+
+  def setcamright(self):
+    self.camera0.left.setValue(self.leftR)
+    self.camera0.right.setValue(self.rightR)
+    self.camera0.top.setValue(self.topR)
+    self.camera0.bottom.setValue(self.bottomR)
+    self.camera0.aspectRatio.setValue(self.aspectR)
+    self.camtrans0.translation.setValue([self.camToHead[1][0][3],0,0])
 
   def setupcameras(self):
     nearZ = self.nearZ
     farZ = self.farZ
-    #LEFT EYE
     self.camera0 = SoFrustumCamera()
-    self.basePosition0 = SbVec3f(0.0, 0.0, 0.0)
-    self.camera0.position.setValue(self.basePosition0)
+    self.basePosition = SbVec3f(0.0, 0.0, 0.0)
+    self.camera0.position.setValue(self.basePosition)
     self.camera0.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
-    left = nearZ * self.proj_raw[0][0]
-    right = nearZ * self.proj_raw[0][1]
-    top = nearZ * self.proj_raw[0][3] #top and bottom are reversed https://github.com/ValveSoftware/openvr/issues/110
-    bottom = nearZ * self.proj_raw[0][2]
-    aspect = (top - bottom) / (right - left)
+    self.leftL = nearZ * self.proj_raw[0][0]
+    self.rightL = nearZ * self.proj_raw[0][1]
+    self.topL = nearZ * self.proj_raw[0][3]
+    self.bottomL = nearZ * self.proj_raw[0][2]
+    self.aspectL = (self.topL - self.bottomL) / (self.rightL - self.leftL)
+
+    self.leftR = nearZ * self.proj_raw[1][0]
+    self.rightR = nearZ * self.proj_raw[1][1]
+    self.topR = nearZ * self.proj_raw[1][3]
+    self.bottomR = nearZ * self.proj_raw[1][2]
+    self.aspectR = (self.topR - self.bottomR) / (self.rightR - self.leftR)
     self.camera0.nearDistance.setValue(nearZ)
     self.camera0.farDistance.setValue(farZ)
-    self.camera0.left.setValue(left)
-    self.camera0.right.setValue(right)
-    self.camera0.top.setValue(top)
-    self.camera0.bottom.setValue(bottom)
-    self.camera0.aspectRatio.setValue(aspect)
-    #RIGHT EYE
-    self.camera1 = SoFrustumCamera()
-    self.basePosition1 = SbVec3f(0.0, 0.0, 0.0)
-    self.camera1.position.setValue(self.basePosition1)
-    self.camera1.viewportMapping.setValue(SoCamera.LEAVE_ALONE)
-    left = nearZ * self.proj_raw[1][0]
-    right = nearZ * self.proj_raw[1][1]
-    top = nearZ * self.proj_raw[1][3]
-    bottom = nearZ * self.proj_raw[1][2]
-    aspect = (top - bottom) / (right - left)
-    self.camera1.nearDistance.setValue(nearZ)
-    self.camera1.farDistance.setValue(farZ)
-    self.camera1.left.setValue(left)
-    self.camera1.right.setValue(right)
-    self.camera1.top.setValue(top)
-    self.camera1.bottom.setValue(bottom)
-    self.camera1.aspectRatio.setValue(aspect)
-  
+
   def extractrotation(self, transfmat): #extract rotation quaternion
     qw = sqrt(numpy.fmax(0, 1 + transfmat[0][0] + transfmat[1][1] + transfmat[2][2])) / 2
     qx = sqrt(numpy.fmax(0, 1 + transfmat[0][0] - transfmat[1][1] - transfmat[2][2])) / 2
@@ -144,18 +130,16 @@ class OpenVRTest(object):
     hmdrot = self.extractrotation(transfmat)
     hmdpos = self.extracttranslation(transfmat)
     self.camera0.orientation.setValue(hmdrot)
-    self.camera0.position.setValue(self.basePosition0 + hmdpos)
-    self.camera1.orientation.setValue(hmdrot)
-    self.camera1.position.setValue(self.basePosition1 + hmdpos)
+    self.camera0.position.setValue(self.basePosition + hmdpos)
 
     for eye in range(2):
       glBindFramebuffer(GL_FRAMEBUFFER, self.frame_buffers[eye])
       #coin3d rendering
       glUseProgram(0)
       if eye == 0:
-        self.m_sceneManager.setSceneGraph(self.rootScene0)
+        self.setcamleft()
       if eye == 1:
-        self.m_sceneManager.setSceneGraph(self.rootScene1)
+        self.setcamright()
       glEnable(GL_CULL_FACE)
       glEnable(GL_DEPTH_TEST)
       self.m_sceneManager.render()
@@ -224,7 +208,6 @@ class OpenVRTest(object):
     for eye in range(2):
       glDeleteBuffers(1, [self.frame_buffers[eye]])
     self.rootScene0.unref()
-    self.rootScene1.unref()
     SDL_GL_DeleteContext(self.context)
     SDL_DestroyWindow(self.window)
     SDL_Quit()
